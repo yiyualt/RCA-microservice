@@ -44,7 +44,7 @@
     <script>
         // Function to fetch user data from Flask backend
         function fetchUserData() {
-            fetch("http://localhost:5000/get_user_data")
+            fetch("http://localhost:5001/get_user_data")
                 .then(response => response.json())
                 .then(data => {
                     // Display the fetched data
