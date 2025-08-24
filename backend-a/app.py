@@ -6,7 +6,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 # Initialize Redis client
-redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
+redis_client = redis.StrictRedis(host='redis', port=6379, db=0, decode_responses=True)
 
 # API route to get specific data from Redis and Backend B
 @app.route("/get_user_data")
@@ -20,7 +20,7 @@ def get_user_data():
             return jsonify({"error": "Data not found in Redis"}), 404
 
         # Now, fetch 'timestamp' from Backend B
-        response = requests.get("http://localhost:5002/get_timestamp_from_backend_b")
+        response = requests.get("http://backend-b:5002/get_timestamp_from_backend_b")
         if response.status_code == 200:
             backend_b_data = response.json()
             timestamp = backend_b_data.get('timestamp')
