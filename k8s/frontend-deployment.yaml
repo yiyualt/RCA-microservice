@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 2  # 2 replicas of Frontend
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: frontend:latest  # This should reference the correct local image
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector:
+    app: frontend  # Match the label 'app: frontend' to target the right Pods
+  ports:
+    - protocol: TCP
+      port: 80        # Expose the Service on port 80
+      targetPort: 80   # The port inside the container where the app is listening (containerPort 80)
+  type: LoadBalancer  # Expose the service with LoadBalancer type to get an external IP in Minikube
