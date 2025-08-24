@@ -49,7 +49,16 @@
                 .then(data => {
                     // Display the fetched data
                     const resultDiv = document.getElementById("result");
-                    resultDiv.innerHTML = "Username: " + data.username + "<br>Department: " + data.department;
+
+                    // Check if there's an error
+                    if (data.error) {
+                        resultDiv.innerHTML = "Error: " + data.error;
+                    } else {
+                        resultDiv.innerHTML = 
+                            "Username: " + data.username + "<br>" +
+                            "Department: " + data.department + "<br>" +
+                            "Timestamp: " + data.timestamp;
+                    }
                 })
                 .catch(error => {
                     const resultDiv = document.getElementById("result");
@@ -59,4 +68,3 @@
     </script>
 </body>
 </html>
-
