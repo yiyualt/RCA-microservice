@@ -33,6 +33,9 @@ spec:
   selector:
     app: jaeger
   ports:
+  - name: otlp-grpc
+    port: 4317
+    targetPort: 4317
   - name: grpc
     port: 14250
     targetPort: 14250

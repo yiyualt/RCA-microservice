@@ -18,6 +18,23 @@ spec:
         imagePullPolicy: Never
         ports:
         - containerPort: 5002
+        env:
+        - name: OTEL_SERVICE_NAME
+          value: "backend-b"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otel-collector.default.svc:4318"
+        - name: OTEL_TRACES_EXPORTER
+          value: "otlp"
+        - name: OTEL_METRICS_EXPORTER
+          value: "otlp"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.version=1.0.0,deployment.environment=dev"
+        - name: OTEL_TRACES_SAMPLER
+          value: "parentbased_traceidratio"
+        - name: OTEL_TRACES_SAMPLER_ARG
+          value: "0.2"
+        command: ["opentelemetry-instrument"]
+        args: ["python", "timecheck.py"]
 ---
 apiVersion: v1
 kind: Service

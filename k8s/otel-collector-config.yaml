@@ -65,11 +65,11 @@ data:
       logging:
         loglevel: debug
 
-      # OTLP exporter for Jaeger
-      otlp/jaeger:
-        endpoint: "jaeger-collector:4317"  # OTLP endpoint for Jaeger
+      # OTLP exporter to Jaeger (requires Jaeger service to expose 4317)
+      otlp:
+        endpoint: "jaeger-collector.default.svc:4317"
         tls:
-          insecure: true  # Set to false if your Jaeger collector uses TLS
+          insecure: true
       
       # Prometheus for metrics
       prometheus:
@@ -92,7 +92,7 @@ data:
         traces:
           receivers: [otlp]
           processors: [batch, resource]
-          exporters: [otlp/jaeger, logging]
+          exporters: [otlp, logging]
         metrics:
           receivers: [otlp, redis, hostmetrics, kubeletstats, prometheus]
           processors: [batch, resource]
