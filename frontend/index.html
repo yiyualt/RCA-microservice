@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flask Frontend</title>
     <style>
+        /* existing styles */
         body {
             font-family: Arial, sans-serif;
             text-align: center;
@@ -42,15 +43,37 @@
     <div class="result" id="result"></div>
 
     <script>
-        // Function to fetch user data from Flask backend
+        // Frontend performance monitoring for page load time
+        const startTime = performance.now();
+        
+        // Send page load metrics to the backend once the page is loaded
+        window.addEventListener('load', function() {
+            const loadTime = performance.now() - startTime;
+            console.log('Page load time:', loadTime);
+            
+            // Send frontend metrics to Backend A
+            fetch('http://localhost:5001/frontend_metrics', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    event: 'page_load',
+                    loadTime: loadTime,
+                    userAgent: navigator.userAgent
+                })
+            }).catch(() => {}); // Silently fail if Backend A is unavailable
+        });
+
+        // Function to fetch user data from Backend A and track API call duration
         function fetchUserData() {
+            const startTime = performance.now();
+            
             fetch('http://localhost:5001/get_user_data')
                 .then(response => response.json())
                 .then(data => {
-                    // Display the fetched data
                     const resultDiv = document.getElementById("result");
+                    const apiTime = performance.now() - startTime;  // Measure API call duration
 
-                    // Check if there's an error
+                    // Display fetched data or an error message
                     if (data.error) {
                         resultDiv.innerHTML = "Error: " + data.error;
                     } else {
@@ -59,6 +82,18 @@
                             "Department: " + data.department + "<br>" +
                             "Timestamp: " + data.timestamp;
                     }
+
+                    // Send API call timing to Backend A
+                    fetch('http://localhost:5001/frontend_metrics', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            event: 'api_call',
+                            endpoint: '/get_user_data',
+                            duration: apiTime,
+                            success: !data.error
+                        })
+                    }).catch(() => {});
                 })
                 .catch(error => {
                     const resultDiv = document.getElementById("result");

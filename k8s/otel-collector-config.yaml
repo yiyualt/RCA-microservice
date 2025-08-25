@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+data:
+  otel-collector-config.yaml: |
+    receivers:
+      # OTLP receivers
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+      
+      # Redis metrics
+      redis:
+        endpoint: "redis:6379"
+        collection_interval: 30s
+      
+      # System metrics
+      hostmetrics:
+        collection_interval: 30s
+        scrapers:
+          cpu:
+          disk:
+          load:
+          filesystem:
+          memory:
+          network:
+          paging:
+          processes:
+      
+      # Kubernetes metrics
+      kubeletstats:
+        collection_interval: 30s
+        auth_type: serviceAccount
+        endpoint: "${env:K8S_NODE_IP}:10250"
+        insecure_skip_verify: true
+      
+      # Prometheus for scraping metrics
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: 'otel-collector'
+              scrape_interval: 30s
+              static_configs:
+                - targets: ['0.0.0.0:8888']
+
+    processors:
+      batch:
+        timeout: 1s
+        send_batch_size: 1024
+      memory_limiter:
+        check_interval: 1s
+        limit_percentage: 75
+        spike_limit_percentage: 15
+      resource:
+        attributes:
+          - key: k8s.cluster.name
+            value: minikube
+            action: upsert
+
+    exporters:
+      logging:
+        loglevel: debug
+
+      # OTLP exporter for Jaeger
+      otlp/jaeger:
+        endpoint: "jaeger-collector:4317"  # OTLP endpoint for Jaeger
+        tls:
+          insecure: true  # Set to false if your Jaeger collector uses TLS
+      
+      # Prometheus for metrics
+      prometheus:
+        endpoint: "0.0.0.0:8889"
+        namespace: myapp
+      
+      # Debug exporter
+      debug:
+
+    extensions:
+      health_check:
+      pprof:
+        endpoint: :1888
+      zpages:
+        endpoint: :55679
+
+    service:
+      extensions: [health_check, pprof, zpages]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch, resource]
+          exporters: [otlp/jaeger, logging]
+        metrics:
+          receivers: [otlp, redis, hostmetrics, kubeletstats, prometheus]
+          processors: [batch, resource]
+          exporters: [prometheus, logging]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [logging]
