@@ -91,6 +91,23 @@ def get_user_data():
                 backend_b_data = response.json()
                 timestamp = backend_b_data.get('timestamp')
 
+                # Call Backend D to format timestamp into human-readable form
+                with tracer.start_as_current_span("call_backend_d"):
+                    try:
+                        d_resp = requests.post(
+                            "http://backend-d:5004/format_time",
+                            json={"timestamp": timestamp},
+                            timeout=3,
+                        )
+                        span.set_attribute("backend_d.status_code", d_resp.status_code)
+                        if d_resp.status_code == 200:
+                            formatted = d_resp.json().get('formatted')
+                        else:
+                            formatted = None
+                    except Exception as e:
+                        span.record_exception(e)
+                        formatted = None
+
                 # Record success metrics
                 duration = time.time() - start_time
                 request_duration.record(duration, {"endpoint": "/get_user_data", "status": "success"})
@@ -98,7 +115,8 @@ def get_user_data():
                 return jsonify({
                     "username": username,
                     "department": department,
-                    "timestamp": timestamp
+                    "timestamp": timestamp,
+                    "timestamp_human": formatted
                 })
             else:
                 span.set_status(trace.Status(trace.StatusCode.ERROR, "Backend B call failed"))

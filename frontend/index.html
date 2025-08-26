@@ -88,7 +88,8 @@
                             userDiv.innerHTML =
                                 "Username: " + data.username + "<br>" +
                                 "Department: " + data.department + "<br>" +
-                                "Timestamp: " + data.timestamp;
+                                "Timestamp: " + data.timestamp + "<br>" +
+                                "Timestamp (human): " + (data.timestamp_human || 'N/A');
                         }
                     }
                     // Send API call timing for Backend A

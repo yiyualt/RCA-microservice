@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-d
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend-d
+  template:
+    metadata:
+      labels:
+        app: backend-d
+    spec:
+      containers:
+      - name: backend-d
+        image: backend-d:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5004
+        env:
+        - name: OTEL_SERVICE_NAME
+          value: "backend-d"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otel-collector.default.svc:4318"
+        - name: OTEL_TRACES_EXPORTER
+          value: "otlp"
+        - name: OTEL_METRICS_EXPORTER
+          value: "otlp"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.version=1.0.0,deployment.environment=dev"
+        - name: OTEL_TRACES_SAMPLER
+          value: "parentbased_traceidratio"
+        - name: OTEL_TRACES_SAMPLER_ARG
+          value: "0.2"
+        command: ["opentelemetry-instrument"]
+        args: ["python", "formatter.py"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-d
+spec:
+  selector:
+    app: backend-d
+  ports:
+    - protocol: TCP
+      port: 5004
+      targetPort: 5004
+  type: ClusterIP
+
+
