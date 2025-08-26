@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 from datetime import datetime
 import time
+import requests
 
 # OpenTelemetry imports
 from opentelemetry import trace
@@ -11,6 +12,7 @@ from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExp
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
 app = Flask(__name__)
 
@@ -27,6 +29,7 @@ meter_provider = MeterProvider(metric_readers=[metric_reader])
 
 # Instrument Flask
 FlaskInstrumentor().instrument_app(app)
+RequestsInstrumentor().instrument()
 
 # Create metrics
 meter = meter_provider.get_meter("backend-b")
@@ -51,12 +54,25 @@ def get_timestamp_from_backend_b():
         
         # Fetch the current timestamp
         timestamp = datetime.now().isoformat()
-        
+        echoed = None
+        # Call Backend E to echo the payload
+        with tracer.start_as_current_span("call_backend_e"):
+            try:
+                e_resp = requests.post(
+                    "http://backend-e:5005/echo",
+                    json={"timestamp": timestamp, "source": "backend-b"},
+                    timeout=3,
+                )
+                if e_resp.status_code == 200:
+                    echoed = e_resp.json()
+            except Exception:
+                echoed = None
+
         # Record the request duration
         duration = time.time() - start_time
         request_duration.record(duration, {"endpoint": "/get_timestamp_from_backend_b"})
         
-        return jsonify({"timestamp": timestamp})
+        return jsonify({"timestamp": timestamp, "echo": echoed})
 
 @app.route("/health")
 def health():
